@@ -3,25 +3,14 @@ package plumtree.viewer.layout;
 
 import plumtree.viewer.utils.Host;
 
-import java.awt.geom.Point2D;
 import java.util.Objects;
 
 public class PlumtreeVertex {
 
     Host node;
-    Point2D coord;
-
-    public PlumtreeVertex(Host node, Point2D coord) {
-        this.node = node;
-        this.coord = coord;
-    }
 
     public PlumtreeVertex(Host node) {
         this.node = node;
-    }
-
-    public Point2D getCoord() {
-        return coord;
     }
 
     @Override

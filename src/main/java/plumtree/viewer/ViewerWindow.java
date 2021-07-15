@@ -1,6 +1,5 @@
 package plumtree.viewer;
 
-import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
 import edu.uci.ics.jung.algorithms.layout.util.VisRunner;
@@ -24,6 +23,7 @@ import edu.uci.ics.jung.visualization.util.Animator;
 import plumtree.viewer.utils.Host;
 import plumtree.viewer.utils.Line;
 
+import java.util.HashMap;
 import java.util.List;
 import javax.swing.*;
 import java.awt.*;
@@ -44,10 +44,12 @@ public class ViewerWindow extends JApplet {
         graph = new DirectedSparseMultigraph<>();
         layout = new FREmaLayout(graph, new Dimension(700, 700));
         Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-
         vv = new VisualizationViewer<>(staticLayout, new Dimension(700, 700));
         vv.setBackground(Color.white);
+
+        vertices = new HashMap<>();
         this.logs = logs;
+        currLine = 0;
 
         //EDGE
         transformerAll = new EdgeShaper(graph, vv.getPickedVertexState());
@@ -93,7 +95,11 @@ public class ViewerWindow extends JApplet {
 
         //STEPS
         JButton prev = new JButton("<");
-        prev.addActionListener(e -> processPrevious());
+        prev.addActionListener(e -> processPrevious(1));
+        JButton prevprev = new JButton("<<");
+        prevprev.addActionListener(e -> processPrevious(10));
+        JButton prevprevprev = new JButton("<<<");
+        prevprevprev.addActionListener(e -> processPrevious(100));
         JButton next = new JButton(">");
         next.addActionListener(e -> processNext(1));
         JButton nextNext = new JButton(">>");
@@ -101,12 +107,14 @@ public class ViewerWindow extends JApplet {
         JButton nextNextNext = new JButton(">>>");
         nextNextNext.addActionListener(e -> processNext(100));
         JPanel stepGrid = new JPanel(new GridLayout(1, 0));
-        stepGrid.setBorder(BorderFactory.createTitledBorder("Steps"));
+        stepGrid.setBorder(BorderFactory.createTitledBorder("Steps (1, 10 or 100)"));
 
         //CONTROLS
         JPanel controls = new JPanel();
         scaleGrid.add(plus);
         scaleGrid.add(minus);
+        stepGrid.add(prevprevprev);
+        stepGrid.add(prevprev);
         stepGrid.add(prev);
         stepGrid.add(next);
         stepGrid.add(nextNext);
@@ -150,48 +158,58 @@ public class ViewerWindow extends JApplet {
     }
 
     private void processNext(int numberOfLines) {
-        for(int i = 0;i<numberOfLines;i++) {
+        for (int i = 0; i < numberOfLines; i++) {
             if (currLine >= logs.size()) {
                 System.out.println("No more lines to process");
                 return;
             }
             Line l = logs.get(currLine);
             System.out.println(l.getTs() + " Applying -> NODE: " + l.getNode() + " " + l.getContent());
-            for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
-                switch (toAdd.getKey()) {
-                    case "eager":
-                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
-                        break;
-                    case "lazy":
-                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
-                        break;
-                    case "pending":
-                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
-                        break;
-                    case "currPending":
-                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                        break;
-                    default:
-                        break;
-                }
-            }
 
-            for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
-                switch (toRemove.getKey()) {
-                    case "eager":
-                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
-                        break;
-                    case "lazy":
-                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
-                        break;
-                    case "pending":
-                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
-                        break;
-                    case "currPending":
-                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                        break;
-                    default:
-                        break;
+            if (l.getHello() != null) {
+                PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
+                addVertex(v1);
+                vertices.put(l.getHello(), v1);
+            } else if (l.getGoodbye() != null) {
+                PlumtreeVertex v1 = new PlumtreeVertex(l.getGoodbye());
+                removeVertex(v1);
+            } else {
+                for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
+                    switch (toAdd.getKey()) {
+                        case "eager":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
+                            break;
+                        case "lazy":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
+                            break;
+                        case "pending":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
+                            break;
+                        case "currPending":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
+                    switch (toRemove.getKey()) {
+                        case "eager":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
+                            break;
+                        case "lazy":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
+                            break;
+                        case "pending":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
+                            break;
+                        case "currPending":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             currLine++;
@@ -199,49 +217,61 @@ public class ViewerWindow extends JApplet {
         redraw();
     }
 
-    private void processPrevious() {
-        if(currLine == 0) {
-            System.out.println("Currently in first line");
-            return;
-        }
-        currLine--;
-        Line l = logs.get(currLine);
-        System.out.println(l.getTs() + " Undoing -> NODE: " + l.getNode() + " " + l.getContent());
-        for(Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
-            switch (toAdd.getKey()) {
-                case "eager":
-                    removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
-                    break;
-                case "lazy":
-                    removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
-                    break;
-                case "pending":
-                    removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
-                    break;
-                case "currPending":
-                    removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                    break;
-                default:
-                    break;
+    private void processPrevious(int numberOfLines) {
+        for (int i = 0; i < numberOfLines; i++) {
+            if (currLine == 0) {
+                System.out.println("Currently in first line");
+                return;
             }
-        }
+            currLine--;
+            Line l = logs.get(currLine);
+            System.out.println(l.getTs() + " Undoing -> NODE: " + l.getNode() + " " + l.getContent());
 
-        for(Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
-            switch (toRemove.getKey()) {
-                case "eager":
-                    addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
-                    break;
-                case "lazy":
-                    addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
-                    break;
-                case "pending":
-                    addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
-                    break;
-                case "currPending":
-                    addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                    break;
-                default:
-                    break;
+            if (l.getHello() != null) {
+                PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
+                removeVertex(v1);
+            } else if (l.getGoodbye() != null) {
+                PlumtreeVertex v1 = new PlumtreeVertex(l.getGoodbye());
+                addVertex(v1);
+                vertices.put(l.getGoodbye(), v1);
+            } else {
+                for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
+                    switch (toAdd.getKey()) {
+                        case "eager":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
+                            break;
+                        case "lazy":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
+                            break;
+                        case "pending":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
+                            break;
+                        case "currPending":
+                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
+                    switch (toRemove.getKey()) {
+                        case "eager":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
+                            break;
+                        case "lazy":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
+                            break;
+                        case "pending":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
+                            break;
+                        case "currPending":
+                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
         redraw();
