@@ -17,7 +17,7 @@ import java.util.List;
 
 public class Main {
 
-    public static final String FOLDER_PATH = "logs";
+    public static final String FOLDER_PATH = "/tmp/plumtreelogs";
 
     public static void main(String[] args) throws Exception {
 
@@ -29,7 +29,7 @@ public class Main {
         for (int i = 0; i < listOfFiles.length; i++) {
             //results-10.0.0.5-5000.log
             String[] strs = listOfFiles[i].getName().split("-");
-            Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]));
+            Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]) + 1000);
 
             File file = listOfFiles[i].getAbsoluteFile();
 
@@ -67,7 +67,7 @@ public class Main {
         for (int i = 0; i < listOfFiles.length; i++) {
             //results-10.0.0.5-5000.log
             String[] strs = listOfFiles[i].getName().split("-");
-            Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]));
+            Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]) + 1000);
             PlumtreeVertex v1 = new PlumtreeVertex(node, new Point(x, y));
             visualizer.addVertex(v1);
             vertices.put(node, v1);
