@@ -11,13 +11,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: pt.unl.fct.di.novasys:babel-core:0.4.33" level="project" />
-    <orderEntry type="library" name="Maven: pt.unl.fct.di.novasys:network-layer:2.0.33" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.12.1" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-core:2.12.1" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-all:4.1.51.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.9" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-collections4:4.4" level="project" />
     <orderEntry type="library" name="Maven: net.sf.jung:jung-api:2.1.1" level="project" />
     <orderEntry type="library" name="Maven: net.sf.jung:jung-visualization:2.1.1" level="project" />
     <orderEntry type="library" name="Maven: net.sf.jung:jung-graph-impl:2.1.1" level="project" />

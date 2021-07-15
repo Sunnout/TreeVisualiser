@@ -1,6 +1,7 @@
 package plumtree.viewer.layout;
 
-import network.data.Host;
+
+import plumtree.viewer.utils.Host;
 
 import java.awt.geom.Point2D;
 import java.util.Objects;
@@ -13,6 +14,10 @@ public class PlumtreeVertex {
     public PlumtreeVertex(Host node, Point2D coord) {
         this.node = node;
         this.coord = coord;
+    }
+
+    public PlumtreeVertex(Host node) {
+        this.node = node;
     }
 
     public Point2D getCoord() {
@@ -40,4 +45,5 @@ public class PlumtreeVertex {
     public Host getNode() {
         return node;
     }
+
 }

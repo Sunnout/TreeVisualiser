@@ -21,9 +21,6 @@ public class EdgeShaper implements Function<PlumtreeEdge, Shape> {
 
     @Override
     public Shape apply(PlumtreeEdge edge) {
-        if (edge.getType() == PlumtreeEdge.Type.EAGER)
-            return new Line2D.Float(0.0f, 0.0f, 1.0f, 0.0f);
-        else
-            return new Line2D.Float(0.0f, 0.0f, 1.0f, 0.0f);
+        return new Line2D.Float(0.0f, 0.0f, 1.0f, 0.0f);
     }
 }

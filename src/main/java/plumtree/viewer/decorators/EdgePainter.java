@@ -29,7 +29,7 @@ public class EdgePainter implements Function<PlumtreeEdge, Paint> {
     public Paint apply(PlumtreeEdge edge) {
 
         if(pi.isPicked(graph.getSource(edge))) {
-            switch (edge.getType()){
+            switch (edge.getType()) {
                 case LAZY:
                     return LAZY_PAINT;
                 case EAGER:
