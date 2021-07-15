@@ -1,5 +1,10 @@
 package plumtree.viewer;
 
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
+import edu.uci.ics.jung.algorithms.layout.util.VisRunner;
+import edu.uci.ics.jung.algorithms.util.IterativeContext;
 import plumtree.viewer.decorators.*;
 import plumtree.viewer.layout.*;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
@@ -28,7 +33,7 @@ public class ViewerWindow extends JApplet {
 
     Graph<PlumtreeVertex, PlumtreeEdge> graph;
     VisualizationViewer<PlumtreeVertex, PlumtreeEdge> vv;
-    StaticLayout<PlumtreeVertex, PlumtreeEdge> layout;
+    FREmaLayout layout;
     EdgeShaper transformerAll;
 
     Map<Host, PlumtreeVertex> vertices;
@@ -37,8 +42,10 @@ public class ViewerWindow extends JApplet {
 
     public ViewerWindow(List<Line> logs) {
         graph = new DirectedSparseMultigraph<>();
-        layout = new StaticLayout<>(graph, PlumtreeVertex::getCoord);
-        vv = new VisualizationViewer<>(layout, new Dimension(800, 600));
+        layout = new FREmaLayout(graph, new Dimension(500, 500));
+        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+
+        vv = new VisualizationViewer<>(staticLayout, new Dimension(500, 500));
         vv.setBackground(Color.white);
         this.logs = logs;
 
@@ -125,12 +132,15 @@ public class ViewerWindow extends JApplet {
     }
 
     public void redraw(){
-        StaticLayout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(layout.getGraph(), PlumtreeVertex::getCoord);
-        layout.getGraph().getVertices().forEach(staticLayout::apply);
-        LayoutTransition<PlumtreeVertex, PlumtreeEdge> lt = new LayoutTransition<>(vv, staticLayout, layout);
+        layout.initialize();
+        Relaxer relaxer = new VisRunner((IterativeContext)layout);
+        relaxer.stop();
+        relaxer.prerelax();
+        StaticLayout<PlumtreeVertex,PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+        LayoutTransition<PlumtreeVertex,PlumtreeEdge> lt = new LayoutTransition<>(vv, vv.getGraphLayout(), staticLayout);
         Animator animator = new Animator(lt);
         animator.start();
-        //vv.repaint();
+        vv.repaint();
     }
 
     private void processNext() {

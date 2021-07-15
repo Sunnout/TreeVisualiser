@@ -17,7 +17,7 @@ import java.util.List;
 
 public class Main {
 
-    public static final String FOLDER_PATH = "/Users/emarodriguesvieira/Desktop/GraphVisualizer/logs";
+    public static final String FOLDER_PATH = "logs";
 
     public static void main(String[] args) throws Exception {
 
