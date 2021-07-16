@@ -137,7 +137,6 @@ public class ViewerWindow extends JApplet {
     }
 
     public void addVertex(PlumtreeVertex v) {
-        graph.removeVertex(v);
         graph.addVertex(v);
     }
 
@@ -158,13 +157,14 @@ public class ViewerWindow extends JApplet {
     }
 
     private void processNext(int numberOfLines) {
+        if (currLine + numberOfLines > logs.size()) {
+            System.out.println("Cannot process " + numberOfLines + " lines");
+            return;
+        }
+
         for (int i = 0; i < numberOfLines; i++) {
-            if (currLine >= logs.size()) {
-                System.out.println("No more lines to process");
-                return;
-            }
             Line l = logs.get(currLine);
-            System.out.println(l.getTs() + " Applying -> NODE: " + l.getNode() + " " + l.getContent());
+            System.out.println(l.getTs() + " Processing -> NODE: " + l.getNode() + " " + l.getContent());
 
             if (l.getHello() != null) {
                 PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
@@ -218,11 +218,12 @@ public class ViewerWindow extends JApplet {
     }
 
     private void processPrevious(int numberOfLines) {
+        if (currLine - numberOfLines < 0) {
+            System.out.println("Cannot undo " + numberOfLines + " lines");
+            return;
+        }
+
         for (int i = 0; i < numberOfLines; i++) {
-            if (currLine == 0) {
-                System.out.println("Currently in first line");
-                return;
-            }
             currLine--;
             Line l = logs.get(currLine);
             System.out.println(l.getTs() + " Undoing -> NODE: " + l.getNode() + " " + l.getContent());
@@ -275,9 +276,5 @@ public class ViewerWindow extends JApplet {
             }
         }
         redraw();
-    }
-
-    public void getVertexMap(Map<Host, PlumtreeVertex> vertices) {
-        this.vertices = vertices;
     }
 }

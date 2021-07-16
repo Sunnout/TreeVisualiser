@@ -1,6 +1,5 @@
 package plumtree.viewer;
 
-import plumtree.viewer.layout.PlumtreeVertex;
 import plumtree.viewer.utils.Host;
 import plumtree.viewer.utils.Line;
 import plumtree.viewer.utils.LineByTimestamp;
@@ -27,42 +26,42 @@ public class Main {
         File[] listOfFiles = folder.listFiles();
         for (int i = 0; i < listOfFiles.length; i++) {
             //results-10.0.0.5-5000.log
-            String[] strs = listOfFiles[i].getName().split("-");
-            Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]) + 1000);
+            if(!listOfFiles[i].getName().equals(".DS_Store")) {
+                String[] strs = listOfFiles[i].getName().split("-");
+                Host node = new Host(InetAddress.getByName(strs[1]), Integer.parseInt(strs[2].split("\\.")[0]) + 1000);
 
-            File file = listOfFiles[i].getAbsoluteFile();
+                File file = listOfFiles[i].getAbsoluteFile();
 
-            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-                String l;
-                while ((l = br.readLine()) != null) {
-                    String lineContent = "";
-                    if(l.contains("VIEWS:")) {
-                        int startIndex = l.indexOf("VIS-") + 4;
-                        lineContent = l.substring(startIndex);
-                        String[] parts = l.split(" ");
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
-                        Date parsedDate = dateFormat.parse(parts[1]);
-                        Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-                        Line line = new Line(node, timestamp, lineContent);
-                        logs.add(line);
-                    } else if(l.contains("Hello, I am")) {
-                        lineContent = l.split(" ", 4)[3];
-                        System.out.println(lineContent);
-                        String[] parts = l.split(" ");
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
-                        Date parsedDate = dateFormat.parse(parts[1]);
-                        Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-                        Line line = new Line(node, timestamp, lineContent);
-                        logs.add(line);
-                    } else if(l.contains("Goodbye")) {
-                        lineContent = l.split(" ", 4)[3];
-                        System.out.println(lineContent);
-                        String[] parts = l.split(" ");
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
-                        Date parsedDate = dateFormat.parse(parts[1]);
-                        Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-                        Line line = new Line(node, timestamp, lineContent);
-                        logs.add(line);
+                try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                    String l;
+                    while ((l = br.readLine()) != null) {
+                        String lineContent = "";
+                        if (l.contains("VIEWS:")) {
+                            int startIndex = l.indexOf("VIS-") + 4;
+                            lineContent = l.substring(startIndex);
+                            String[] parts = l.split(" ");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            Date parsedDate = dateFormat.parse(parts[1]);
+                            Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+                            Line line = new Line(node, timestamp, lineContent);
+                            logs.add(line);
+                        } else if (l.contains("Hello, I am")) {
+                            lineContent = l.split(" ", 4)[3];
+                            String[] parts = l.split(" ");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            Date parsedDate = dateFormat.parse(parts[1]);
+                            Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+                            Line line = new Line(node, timestamp, lineContent);
+                            logs.add(line);
+                        } else if (l.contains("Goodbye")) {
+                            lineContent = l.split(" ", 4)[3];
+                            String[] parts = l.split(" ");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            Date parsedDate = dateFormat.parse(parts[1]);
+                            Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+                            Line line = new Line(node, timestamp, lineContent);
+                            logs.add(line);
+                        }
                     }
                 }
             }

@@ -68,7 +68,6 @@ public class Line {
     }
 
     private void computeChanges() throws UnknownHostException {
-        System.out.println(content);
         if (content.contains("Hello")) {
             this.hello = node;
         } else if (content.contains("Goodbye")) {
