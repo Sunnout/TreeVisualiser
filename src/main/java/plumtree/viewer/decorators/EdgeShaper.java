@@ -7,7 +7,7 @@ import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.picking.PickedInfo;
 
 import java.awt.*;
-import java.awt.geom.Line2D;
+import java.awt.geom.QuadCurve2D;
 
 public class EdgeShaper implements Function<PlumtreeEdge, Shape> {
 
@@ -21,6 +21,6 @@ public class EdgeShaper implements Function<PlumtreeEdge, Shape> {
 
     @Override
     public Shape apply(PlumtreeEdge edge) {
-        return new Line2D.Float(0.0f, 0.0f, 1.0f, 0.0f);
+        return new QuadCurve2D.Float(0.0f, 0.0f, 0.5f, 10, 1.0f, 0.0f);
     }
 }

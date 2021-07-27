@@ -1,9 +1,11 @@
 package plumtree.viewer;
 
 import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.algorithms.layout.TreeLayout;
 import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
 import edu.uci.ics.jung.algorithms.layout.util.VisRunner;
 import edu.uci.ics.jung.algorithms.util.IterativeContext;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import plumtree.viewer.decorators.*;
 import plumtree.viewer.layout.*;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
@@ -42,9 +44,9 @@ public class ViewerWindow extends JApplet {
 
     public ViewerWindow(List<Line> logs) {
         graph = new DirectedSparseMultigraph<>();
-        layout = new FREmaLayout(graph, new Dimension(700, 700));
+        layout = new FREmaLayout(graph, new Dimension(850, 850));
         Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-        vv = new VisualizationViewer<>(staticLayout, new Dimension(700, 700));
+        vv = new VisualizationViewer<>(staticLayout, new Dimension(850, 850));
         vv.setBackground(Color.white);
 
         vertices = new HashMap<>();
@@ -54,6 +56,7 @@ public class ViewerWindow extends JApplet {
         //EDGE
         transformerAll = new EdgeShaper(graph, vv.getPickedVertexState());
         vv.getRenderContext().setEdgeShapeTransformer(transformerAll);
+//        vv.getRenderContext().setEdgeShapeTransformer(EdgeShape.line(graph));
         vv.getRenderContext().setEdgeArrowTransformer(new DirectionalEdgeArrowTransformer<>(10, 8, 4));
         EdgePainter arrowPainter = new EdgePainter(graph, vv.getPickedVertexState());
         vv.getRenderContext().setEdgeDrawPaintTransformer(arrowPainter);
