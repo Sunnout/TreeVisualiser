@@ -1,9 +1,12 @@
 package plumtree.viewer;
 
+import com.google.common.base.Functions;
 import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
 import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
 import edu.uci.ics.jung.algorithms.layout.util.VisRunner;
+import edu.uci.ics.jung.algorithms.shortestpath.MinimumSpanningForest2;
 import edu.uci.ics.jung.algorithms.util.IterativeContext;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import plumtree.viewer.decorators.*;
@@ -35,7 +38,8 @@ public class ViewerWindow extends JApplet {
 
     Graph<PlumtreeVertex, PlumtreeEdge> graph;
     VisualizationViewer<PlumtreeVertex, PlumtreeEdge> vv;
-    FREmaLayout layout;
+//    FREmaLayout layout;
+    TreeLayout layout;
     EdgeShaper transformerAll;
 
     Map<Host, PlumtreeVertex> vertices;
@@ -43,8 +47,17 @@ public class ViewerWindow extends JApplet {
     int currLine;
 
     public ViewerWindow(List<Line> logs) {
+//        graph = new DirectedSparseMultigraph<>();
+//        layout = new FREmaLayout(graph, new Dimension(850, 850));
+//        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+
         graph = new DirectedSparseMultigraph<>();
-        layout = new FREmaLayout(graph, new Dimension(850, 850));
+
+        Forest<PlumtreeVertex, PlumtreeEdge> tree = new MinimumSpanningForest2<>(graph,
+                new DelegateForest<>(), DelegateTree.getFactory(),
+                Functions.constant(1.0)).getForest();
+        layout = new RadialTreeLayout<>(tree);
+
         Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
         vv = new VisualizationViewer<>(staticLayout, new Dimension(850, 850));
         vv.setBackground(Color.white);
@@ -147,15 +160,25 @@ public class ViewerWindow extends JApplet {
         graph.removeVertex(v);
     }
 
+//    public void redraw(){
+//        layout.initialize();
+//        Relaxer relaxer = new VisRunner((IterativeContext)layout);
+//        relaxer.stop();
+//        relaxer.prerelax();
+//        StaticLayout<PlumtreeVertex,PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+//        LayoutTransition<PlumtreeVertex,PlumtreeEdge> lt = new LayoutTransition<>(vv, vv.getGraphLayout(), staticLayout);
+//        Animator animator = new Animator(lt);
+//        animator.start();
+//        vv.repaint();
+//    }
+
     public void redraw(){
+        Forest<PlumtreeVertex, PlumtreeEdge> tree = new MinimumSpanningForest2<>(graph, new DelegateForest<>(),
+                DelegateTree.getFactory(), e-> e.getType()== PlumtreeEdge.Type.EAGER ? 0d : 10d ).getForest();
+        layout = new TreeLayout<>(tree, 50, 100);
         layout.initialize();
-        Relaxer relaxer = new VisRunner((IterativeContext)layout);
-        relaxer.stop();
-        relaxer.prerelax();
-        StaticLayout<PlumtreeVertex,PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-        LayoutTransition<PlumtreeVertex,PlumtreeEdge> lt = new LayoutTransition<>(vv, vv.getGraphLayout(), staticLayout);
-        Animator animator = new Animator(lt);
-        animator.start();
+        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+        vv.setGraphLayout(staticLayout);
         vv.repaint();
     }
 
