@@ -3,15 +3,9 @@ package plumtree.viewer;
 import com.google.common.base.Functions;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
-import edu.uci.ics.jung.algorithms.layout.TreeLayout;
-import edu.uci.ics.jung.algorithms.layout.util.Relaxer;
-import edu.uci.ics.jung.algorithms.layout.util.VisRunner;
-import edu.uci.ics.jung.algorithms.shortestpath.MinimumSpanningForest2;
-import edu.uci.ics.jung.algorithms.util.IterativeContext;
-import edu.uci.ics.jung.visualization.decorators.EdgeShape;
-import plumtree.viewer.decorators.*;
-import plumtree.viewer.layout.*;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
+import edu.uci.ics.jung.algorithms.layout.TreeLayout;
+import edu.uci.ics.jung.algorithms.shortestpath.MinimumSpanningForest2;
 import edu.uci.ics.jung.graph.*;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
@@ -25,13 +19,19 @@ import edu.uci.ics.jung.visualization.layout.LayoutTransition;
 import edu.uci.ics.jung.visualization.renderers.DefaultVertexLabelRenderer;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import edu.uci.ics.jung.visualization.util.Animator;
+import plumtree.viewer.decorators.EdgePainter;
+import plumtree.viewer.decorators.EdgeShaper;
+import plumtree.viewer.decorators.VertexLabeler;
+import plumtree.viewer.decorators.VertexPainter;
+import plumtree.viewer.layout.PlumtreeEdge;
+import plumtree.viewer.layout.PlumtreeVertex;
 import plumtree.viewer.utils.Host;
 import plumtree.viewer.utils.Line;
 
-import java.util.HashMap;
-import java.util.List;
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ViewerWindow extends JApplet {
@@ -39,9 +39,9 @@ public class ViewerWindow extends JApplet {
     Graph<PlumtreeVertex, PlumtreeEdge> graph;
     VisualizationViewer<PlumtreeVertex, PlumtreeEdge> vv;
 //    FREmaLayout layout;
-    TreeLayout layout;
     EdgeShaper transformerAll;
 
+    Layout<PlumtreeVertex, PlumtreeEdge> currentLayout;
     Map<Host, PlumtreeVertex> vertices;
     List<Line> logs;
     int currLine;
@@ -56,10 +56,9 @@ public class ViewerWindow extends JApplet {
         Forest<PlumtreeVertex, PlumtreeEdge> tree = new MinimumSpanningForest2<>(graph,
                 new DelegateForest<>(), DelegateTree.getFactory(),
                 Functions.constant(1.0)).getForest();
-        layout = new RadialTreeLayout<>(tree);
-
-        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-        vv = new VisualizationViewer<>(staticLayout, new Dimension(850, 850));
+        TreeLayout<PlumtreeVertex, PlumtreeEdge> layout = new TreeLayout<>(tree);
+        currentLayout = new StaticLayout<>(graph, layout);
+        vv = new VisualizationViewer<>(currentLayout, new Dimension(850, 850));
         vv.setBackground(Color.white);
 
         vertices = new HashMap<>();
@@ -173,13 +172,15 @@ public class ViewerWindow extends JApplet {
 //    }
 
     public void redraw(){
-        Forest<PlumtreeVertex, PlumtreeEdge> tree = new MinimumSpanningForest2<>(graph, new DelegateForest<>(),
+        Forest<PlumtreeVertex, PlumtreeEdge> newTree = new MinimumSpanningForest2<>(graph, new DelegateForest<>(),
                 DelegateTree.getFactory(), e-> e.getType()== PlumtreeEdge.Type.EAGER ? 0d : 10d ).getForest();
-        layout = new TreeLayout<>(tree, 50, 100);
-        layout.initialize();
-        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-        vv.setGraphLayout(staticLayout);
-        vv.repaint();
+        TreeLayout<PlumtreeVertex, PlumtreeEdge> newTreeLayout = new TreeLayout<>(newTree, 50, 100);
+        StaticLayout<PlumtreeVertex, PlumtreeEdge> newLayout = new StaticLayout<>(graph, newTreeLayout);
+
+        LayoutTransition<PlumtreeVertex, PlumtreeEdge> lt = new LayoutTransition<>(vv, currentLayout, newLayout);
+        Animator animator = new Animator(lt);
+        animator.start();
+        currentLayout = newLayout;
     }
 
     private void processNext(int numberOfLines) {
