@@ -183,9 +183,24 @@ public class ViewerWindow extends JApplet {
 
         // EVENT MARKERS
         Hashtable<Integer, JLabel> markers = new Hashtable<>();
+        JLabel eventLabelHello = new JLabel("|");
+        eventLabelHello.setForeground(Color.GREEN.darker());
+        eventLabelHello.setFont(new Font("Arial", Font.PLAIN, 16));
+        JLabel eventLabelGoodbye = new JLabel("|");
+        eventLabelGoodbye.setForeground(Color.RED.darker());
+        eventLabelGoodbye.setFont(new Font("Arial", Font.PLAIN, 16));
         JLabel eventLabel = new JLabel("|");
+        eventLabel.setForeground(new Color(0.5f,0.5f,0.5f,0.2f));
+        eventLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+
         logs.forEach(l -> {
-            markers.put((int) (l.getTs().getTime() - logs.get(0).getTs().getTime()), eventLabel);
+            if (l.getHello() != null) {
+                markers.put((int) (l.getTs().getTime() - logs.get(0).getTs().getTime()), eventLabelHello);
+            } else if (l.getGoodbye() != null) {
+                markers.put((int) (l.getTs().getTime() - logs.get(0).getTs().getTime()), eventLabelGoodbye);
+            } else {
+                markers.put((int) (l.getTs().getTime() - logs.get(0).getTs().getTime()), eventLabel);
+            }
         });
         timeSlider.setLabelTable(markers);
         timeSlider.setPaintLabels(true);
