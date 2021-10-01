@@ -2,7 +2,6 @@ package plumtree.viewer;
 
 import com.google.common.base.Functions;
 import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
 import edu.uci.ics.jung.algorithms.shortestpath.MinimumSpanningForest2;
@@ -29,27 +28,36 @@ import plumtree.viewer.utils.Host;
 import plumtree.viewer.utils.Line;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.util.HashMap;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class ViewerWindow extends JApplet {
 
     Graph<PlumtreeVertex, PlumtreeEdge> graph;
     VisualizationViewer<PlumtreeVertex, PlumtreeEdge> vv;
-//    FREmaLayout layout;
     EdgeShaper transformerAll;
 
     Layout<PlumtreeVertex, PlumtreeEdge> currentLayout;
     Map<Host, PlumtreeVertex> vertices;
     List<Line> logs;
     int currLine;
+    long baseMillis;
+
+    JLabel sliderLabelCurrentTime;
+    JLabel sliderLabelCurrentLine;
+    JSlider timeSlider;
+
+    boolean internalChanging = false;
 
     public ViewerWindow(List<Line> logs) {
-//        graph = new DirectedSparseMultigraph<>();
-//        layout = new FREmaLayout(graph, new Dimension(850, 850));
-//        Layout<PlumtreeVertex, PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
+        this.logs = logs;
+        currLine = -1;
+        baseMillis = logs.get(0).getTs().getTime();
+        int lastMillis = (int)(logs.get(logs.size()-1).getTs().getTime() - baseMillis);
+
 
         graph = new DirectedSparseMultigraph<>();
 
@@ -62,8 +70,7 @@ public class ViewerWindow extends JApplet {
         vv.setBackground(Color.white);
 
         vertices = new HashMap<>();
-        this.logs = logs;
-        currLine = 0;
+
 
         //EDGE
         transformerAll = new EdgeShaper(graph, vv.getPickedVertexState());
@@ -110,17 +117,17 @@ public class ViewerWindow extends JApplet {
 
         //STEPS
         JButton prev = new JButton("<");
-        prev.addActionListener(e -> processPrevious(1));
+        prev.addActionListener(e -> jumpToLine(currLine-1, true));
         JButton prevprev = new JButton("<<");
-        prevprev.addActionListener(e -> processPrevious(10));
+        prevprev.addActionListener(e -> jumpToLine(currLine-10, true));
         JButton prevprevprev = new JButton("<<<");
-        prevprevprev.addActionListener(e -> processPrevious(100));
+        prevprevprev.addActionListener(e -> jumpToLine(currLine-100, true));
         JButton next = new JButton(">");
-        next.addActionListener(e -> processNext(1));
+        next.addActionListener(e -> jumpToLine(currLine+1, true));
         JButton nextNext = new JButton(">>");
-        nextNext.addActionListener(e -> processNext(10));
+        nextNext.addActionListener(e -> jumpToLine(currLine+10, true));
         JButton nextNextNext = new JButton(">>>");
-        nextNextNext.addActionListener(e -> processNext(100));
+        nextNextNext.addActionListener(e -> jumpToLine(currLine+100, true));
         JPanel stepGrid = new JPanel(new GridLayout(1, 0));
         stepGrid.setBorder(BorderFactory.createTitledBorder("Steps (1, 10 or 100)"));
 
@@ -139,11 +146,60 @@ public class ViewerWindow extends JApplet {
         controls.add(modeBox);
         controls.add(edgePanel);
         content.add(controls, BorderLayout.SOUTH);
+
+        JPanel sliderPanel = new JPanel(new BorderLayout(10,3));
+        sliderPanel.setBorder(new EmptyBorder(2, 10, 0, 10));
+
+        //Create the slider
+        sliderLabelCurrentTime = new JLabel("Time");
+        sliderLabelCurrentLine = new JLabel("-1");
+        Timestamp firstTS = logs.get(0).getTs();
+        JLabel sliderLabelMin = new JLabel(String.format("%02d:%02d:%02d:%03d",
+                firstTS.getHours(), firstTS.getMinutes(), firstTS.getSeconds(), firstTS.getTime()%1000));
+        Timestamp lastTS = logs.get(logs.size()-1).getTs();
+        JLabel sliderLabelMax = new JLabel(String.format("%02d:%02d:%02d:%03d",
+                lastTS.getHours(), lastTS.getMinutes(), lastTS.getSeconds(), lastTS.getTime()%1000));
+        timeSlider = new JSlider(JSlider.HORIZONTAL, 0, lastMillis, 0);
+
+        timeSlider.addChangeListener(e -> {
+            JSlider source = (JSlider) e.getSource();
+            long newTs = source.getValue() + baseMillis;
+            Timestamp timestamp = new Timestamp(newTs);
+            sliderLabelCurrentTime.setText(String.format("%02d:%02d:%02d:%03d",
+                    timestamp.getHours(), timestamp.getMinutes(), timestamp.getSeconds(), timestamp.getTime()%1000));
+
+            if (!internalChanging && !source.getValueIsAdjusting()) {
+                //System.out.println("New Slider Val " + source.getValue());
+                jumpToTime(source.getValue());
+            }
+        });
+
+        timeSlider.setMajorTickSpacing(60000);
+        timeSlider.setMinorTickSpacing(10000);
+        timeSlider.setPaintTicks(true);
+        sliderPanel.add(timeSlider);
+        sliderPanel.add(sliderLabelMin, BorderLayout.WEST);
+        sliderPanel.add(sliderLabelMax, BorderLayout.EAST);
+        JPanel timePanel = new JPanel();
+        timePanel.add(sliderLabelCurrentTime);
+        timePanel.add(sliderLabelCurrentLine);
+        sliderPanel.add(timePanel, BorderLayout.SOUTH);
+        content.add(sliderPanel, BorderLayout.NORTH);
+
+        //Create the label table
+        Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+        JLabel eventLabel = new JLabel("|");
+        logs.forEach(l -> {
+            labelTable.put((int) (l.getTs().getTime() - logs.get(0).getTs().getTime()), eventLabel);
+        });
+        timeSlider.setLabelTable(labelTable);
+
+        timeSlider.setPaintLabels(true);
     }
 
     public void addEdge(PlumtreeEdge e) {
-        if(!graph.containsVertex(e.getOrigin())) graph.addVertex(e.getOrigin());
-        if(!graph.containsVertex(e.getDestiny())) graph.addVertex(e.getDestiny());
+        if (!graph.containsVertex(e.getOrigin())) graph.addVertex(e.getOrigin());
+        if (!graph.containsVertex(e.getDestiny())) graph.addVertex(e.getDestiny());
         graph.addEdge(e, e.getOrigin(), e.getDestiny());
     }
 
@@ -159,21 +215,9 @@ public class ViewerWindow extends JApplet {
         graph.removeVertex(v);
     }
 
-//    public void redraw(){
-//        layout.initialize();
-//        Relaxer relaxer = new VisRunner((IterativeContext)layout);
-//        relaxer.stop();
-//        relaxer.prerelax();
-//        StaticLayout<PlumtreeVertex,PlumtreeEdge> staticLayout = new StaticLayout<>(graph, layout);
-//        LayoutTransition<PlumtreeVertex,PlumtreeEdge> lt = new LayoutTransition<>(vv, vv.getGraphLayout(), staticLayout);
-//        Animator animator = new Animator(lt);
-//        animator.start();
-//        vv.repaint();
-//    }
-
-    public void redraw(){
+    public void redraw() {
         Forest<PlumtreeVertex, PlumtreeEdge> newTree = new MinimumSpanningForest2<>(graph, new DelegateForest<>(),
-                DelegateTree.getFactory(), e-> e.getType()== PlumtreeEdge.Type.EAGER ? 0d : 10d ).getForest();
+                DelegateTree.getFactory(), e -> e.getType() == PlumtreeEdge.Type.EAGER ? 0d : 10d).getForest();
         TreeLayout<PlumtreeVertex, PlumtreeEdge> newTreeLayout = new TreeLayout<>(newTree, 50, 100);
         StaticLayout<PlumtreeVertex, PlumtreeEdge> newLayout = new StaticLayout<>(graph, newTreeLayout);
 
@@ -183,125 +227,100 @@ public class ViewerWindow extends JApplet {
         currentLayout = newLayout;
     }
 
-    private void processNext(int numberOfLines) {
-        if (currLine + numberOfLines > logs.size()) {
-            System.out.println("Cannot process " + numberOfLines + " lines");
+    private void jumpToTime(int ts) {
+        System.out.println("jumpToTime " + ts);
+        long targetTime = ts + baseMillis;
+        int target = -1;
+        while(target < (logs.size() - 1) && logs.get(target+1).getTs().getTime() <= targetTime){
+            target++;
+        }
+        jumpToLine(target, false);
+    }
+
+    private void jumpToLine(int targetLine, boolean updateSlider) {
+        if (targetLine >= logs.size() || targetLine < 0) {
+            System.out.println("Cannot jump to line " + targetLine);
             return;
         }
+        if(targetLine == currLine)
+            return;
 
-        for (int i = 0; i < numberOfLines; i++) {
-            Line l = logs.get(currLine);
-            System.out.println(l.getTs() + " Processing -> NODE: " + l.getNode() + " " + l.getContent());
-
-            if (l.getHello() != null) {
-                PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
-                addVertex(v1);
-                vertices.put(l.getHello(), v1);
-            } else if (l.getGoodbye() != null) {
-                PlumtreeVertex v1 = new PlumtreeVertex(l.getGoodbye());
-                removeVertex(v1);
-            } else {
-                for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
-                    switch (toAdd.getKey()) {
-                        case "eager":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
-                            break;
-                        case "lazy":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
-                            break;
-                        case "pending":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
-                            break;
-                        case "currPending":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
-                    switch (toRemove.getKey()) {
-                        case "eager":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
-                            break;
-                        case "lazy":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
-                            break;
-                        case "pending":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
-                            break;
-                        case "currPending":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            currLine++;
+        if(targetLine < currLine) {
+            resetGraph();
+            currLine = -1;
+        }
+        System.out.println("Moving " + (targetLine - currLine) + " lines");
+        for(int i = currLine+1;i<=targetLine;i++){
+            processLine(logs.get(i));
+        }
+        currLine = targetLine;
+        sliderLabelCurrentLine.setText(currLine + "/" + (logs.size()-1));
+        if (updateSlider) {
+            internalChanging = true;
+            timeSlider.setValue((int) (logs.get(currLine).getTs().getTime() - baseMillis));
+            internalChanging = false;
         }
         redraw();
     }
 
-    private void processPrevious(int numberOfLines) {
-        if (currLine - numberOfLines < 0) {
-            System.out.println("Cannot undo " + numberOfLines + " lines");
-            return;
+    private void resetGraph(){
+        Iterator<Map.Entry<Host, PlumtreeVertex>> iterator = vertices.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<Host, PlumtreeVertex> next = iterator.next();
+            removeVertex(next.getValue());
+            iterator.remove();
         }
+        System.out.println("Reset");
+    }
 
-        for (int i = 0; i < numberOfLines; i++) {
-            currLine--;
-            Line l = logs.get(currLine);
-            System.out.println(l.getTs() + " Undoing -> NODE: " + l.getNode() + " " + l.getContent());
+    private void processLine(Line l){
+        System.out.println(l.getTs() + " Processing -> NODE: " + l.getNode() + " " + l.getContent());
 
-            if (l.getHello() != null) {
-                PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
-                removeVertex(v1);
-            } else if (l.getGoodbye() != null) {
-                PlumtreeVertex v1 = new PlumtreeVertex(l.getGoodbye());
-                addVertex(v1);
-                vertices.put(l.getGoodbye(), v1);
-            } else {
-                for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
-                    switch (toAdd.getKey()) {
-                        case "eager":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
-                            break;
-                        case "lazy":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
-                            break;
-                        case "pending":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
-                            break;
-                        case "currPending":
-                            removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                            break;
-                        default:
-                            break;
-                    }
+        if (l.getHello() != null) {
+            PlumtreeVertex v1 = new PlumtreeVertex(l.getHello());
+            addVertex(v1);
+            vertices.put(l.getHello(), v1);
+        } else if (l.getGoodbye() != null) {
+            PlumtreeVertex v1 = new PlumtreeVertex(l.getGoodbye());
+            removeVertex(v1);
+        } else {
+            for (Map.Entry<String, Host> toAdd : l.getToAdd().entrySet()) {
+                switch (toAdd.getKey()) {
+                    case "eager":
+                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.EAGER));
+                        break;
+                    case "lazy":
+                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.LAZY));
+                        break;
+                    case "pending":
+                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.PENDING));
+                        break;
+                    case "currPending":
+                        addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toAdd.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                        break;
+                    default:
+                        break;
                 }
+            }
 
-                for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
-                    switch (toRemove.getKey()) {
-                        case "eager":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
-                            break;
-                        case "lazy":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
-                            break;
-                        case "pending":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
-                            break;
-                        case "currPending":
-                            addEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
-                            break;
-                        default:
-                            break;
-                    }
+            for (Map.Entry<String, Host> toRemove : l.getToRemove().entrySet()) {
+                switch (toRemove.getKey()) {
+                    case "eager":
+                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.EAGER));
+                        break;
+                    case "lazy":
+                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.LAZY));
+                        break;
+                    case "pending":
+                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.PENDING));
+                        break;
+                    case "currPending":
+                        removeEdge(new PlumtreeEdge(vertices.get(l.getNode()), vertices.get(toRemove.getValue()), PlumtreeEdge.Type.CURRENT_PENDING));
+                        break;
+                    default:
+                        break;
                 }
             }
         }
-        redraw();
     }
 }
