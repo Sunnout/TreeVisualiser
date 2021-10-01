@@ -16,6 +16,7 @@ import java.util.List;
 public class Main {
 
     public static final String FOLDER_PATH = "logs";
+    public static final String DATE_FORMAT = "dd/MM/yyyy-HH:mm:ss,SSS";
 
     public static void main(String[] args) throws Exception {
 
@@ -37,26 +38,28 @@ public class Main {
                         if (l.contains("Hello, I am")) {
                             lineContent = l.split(" ", 4)[3];
                             String[] parts = l.split(" ");
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
                             Date parsedDate = dateFormat.parse(parts[1]);
                             Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
                             String[] host_parts = parts[7].split(":");
                             node = new Host(InetAddress.getByName(host_parts[0]), Integer.parseInt(host_parts[1]));
                             Line line = new Line(node, timestamp, lineContent);
                             logs.add(line);
-                        } else if (l.contains("VIEWS:")) {
+
+                        } else if (l.contains("VIS-")) {
                             int startIndex = l.indexOf("VIS-") + 4;
                             lineContent = l.substring(startIndex);
                             String[] parts = l.split(" ");
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
                             Date parsedDate = dateFormat.parse(parts[1]);
                             Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
                             Line line = new Line(node, timestamp, lineContent);
                             logs.add(line);
+
                         } else if (l.contains("Goodbye")) {
                             lineContent = l.split(" ", 4)[3];
                             String[] parts = l.split(" ");
-                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy-HH:mm:ss,SSS");
+                            SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
                             Date parsedDate = dateFormat.parse(parts[1]);
                             Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
                             Line line = new Line(node, timestamp, lineContent);

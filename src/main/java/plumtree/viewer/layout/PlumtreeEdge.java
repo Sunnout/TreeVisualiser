@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public class PlumtreeEdge {
 
-    public enum Type {EAGER, LAZY, PENDING, CURRENT_PENDING}
+    public enum Type {EAGER, LAZY, INCOMING_SYNC, OUTGOING_SYNC, PENDING_INCOMING_SYNCS}
 
     private Type type;
     private PlumtreeVertex origin;
