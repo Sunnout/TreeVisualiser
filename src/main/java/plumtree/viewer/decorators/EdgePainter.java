@@ -14,6 +14,7 @@ public class EdgePainter implements Function<PlumtreeEdge, Paint> {
     private static final Color LAZY_PAINT = Color.black;
     private static final Color PENDING_INCOMING_PAINT = Color.blue;
     private static final Color INCOMING_PAINT = Color.green;
+    private static final Color UNI_DIRECTIONAL = Color.cyan;
 
     protected PickedInfo<PlumtreeVertex> pi;
     protected Graph<PlumtreeVertex, PlumtreeEdge> graph;
@@ -39,8 +40,11 @@ public class EdgePainter implements Function<PlumtreeEdge, Paint> {
                 case INCOMING_SYNC:
                     return INCOMING_PAINT;
             }
-        } else if(edge.getType() == PlumtreeEdge.Type.EAGER)
+        } else if(edge.getType() == PlumtreeEdge.Type.EAGER) {
+            if (graph.findEdge(edge.getDestiny(), edge.getOrigin()) == null || graph.findEdge(edge.getDestiny(), edge.getOrigin()).getType() != PlumtreeEdge.Type.EAGER)
+                return UNI_DIRECTIONAL;
             return EAGER_PAINT;
+        }
 
         return null;
     }

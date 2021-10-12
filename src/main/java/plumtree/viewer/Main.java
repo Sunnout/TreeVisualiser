@@ -15,6 +15,7 @@ import java.util.List;
 
 public class Main {
 
+//    public static final String FOLDER_PATH = "/Volumes/SSD_Pedro/tmp/logs/200nodes/plumtree/prob1/2runs";
     public static final String FOLDER_PATH = "logs";
     public static final String DATE_FORMAT = "dd/MM/yyyy-HH:mm:ss,SSS";
 
@@ -28,7 +29,7 @@ public class Main {
         for (int i = 0; i < listOfFiles.length; i++) {
             //results-10.0.0.5-5000.log
             if(!listOfFiles[i].getName().equals(".DS_Store")) {
-                String[] strs = listOfFiles[i].getName().split("-");
+                System.out.println(i + " - " + listOfFiles[i].getName());
                 Host node = null;
                 File file = listOfFiles[i].getAbsoluteFile();
                 try (BufferedReader br = new BufferedReader(new FileReader(file))) {

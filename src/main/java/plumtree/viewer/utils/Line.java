@@ -84,11 +84,13 @@ public class Line {
 
             for (String action : actions) {
                 String[] parts = action.split(" ");
-                String[] host = parts[1].split(":");
-                if (parts[0].equals("Removed"))
-                    toRemove.put(parts[3], new Host(InetAddress.getByName(host[0]), Integer.parseInt(host[1])));
-                else if (parts[0].equals("Added"))
-                    toAdd.put(parts[3], new Host(InetAddress.getByName(host[0]), Integer.parseInt(host[1])));
+                if (!parts[1].equals("null")) {
+                    String[] host = parts[1].split(":");
+                    if (parts[0].equals("Removed"))
+                        toRemove.put(parts[3], new Host(InetAddress.getByName(host[0]), Integer.parseInt(host[1])));
+                    else if (parts[0].equals("Added"))
+                        toAdd.put(parts[3], new Host(InetAddress.getByName(host[0]), Integer.parseInt(host[1])));
+                }
             }
         }
     }
