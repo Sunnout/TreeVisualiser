@@ -15,7 +15,6 @@ import java.util.List;
 
 public class Main {
 
-//    public static final String FOLDER_PATH = "/Volumes/SSD_Pedro/tmp/logs/200nodes/plumtree/prob1/2runs";
     public static final String FOLDER_PATH = "logs";
     public static final String DATE_FORMAT = "dd/MM/yyyy-HH:mm:ss,SSS";
 
